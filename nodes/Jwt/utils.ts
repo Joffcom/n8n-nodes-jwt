@@ -5,7 +5,7 @@ export function formatPrivateKey(privateKey: string): string {
 	let formattedPrivateKey = '';
 	const parts = privateKey.split('-----').filter((item) => item !== '');
 	parts.forEach((part) => {
-		const regex = /(PRIVATE KEY|CERTIFICATE)/;
+		const regex = /(PRIVATE KEY|CERTIFICATE|PUBLIC KEY)/;
 		if (regex.test(part)) {
 			formattedPrivateKey += `-----${part}-----`;
 		} else {

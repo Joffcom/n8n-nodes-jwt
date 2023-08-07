@@ -284,7 +284,7 @@ export class Jwt implements INodeType {
 		}
 
 		if (credentials.keyType === 'passphrase') {
-			key = credentials.passphrase as string;
+			key = credentials.secret as string;
 		}
 
 		for (let itemIndex = 0; itemIndex < items.length; itemIndex++) {
@@ -311,7 +311,7 @@ export class Jwt implements INodeType {
 
 					returnData.push({
 						json: {
-							token: jwt.sign(claimsToSign, credentials.secret, { algorithm }),
+							token: token,
 						},
 						pairedItem: itemIndex,
 					});
@@ -325,7 +325,7 @@ export class Jwt implements INodeType {
 					const ignoreNotBefore = this.getNodeParameter('ignoreNotBefore', itemIndex) as boolean;
 					const clockTolerance = this.getNodeParameter('clockTolerance', itemIndex) as number;
 					const decoded = jwt.verify(token, key, {
-						algorithms: [algorithm],
+						algorithms: algorithm,
 						ignoreExpiration,
 						ignoreNotBefore,
 						clockTolerance,
