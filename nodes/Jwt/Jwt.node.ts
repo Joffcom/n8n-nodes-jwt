@@ -7,6 +7,8 @@ import {
 	NodeOperationError,
 } from 'n8n-workflow';
 
+import { formatPrivateKey } from './utils';
+
 var jwt = require('jsonwebtoken');
 
 export class Jwt implements INodeType {
@@ -60,7 +62,7 @@ export class Jwt implements INodeType {
 				name: 'algorithm',
 				type: 'options',
 				options: [
-					/*{
+					{
 						name: 'ES256',
 						value: 'ES256',
 					},
@@ -71,7 +73,7 @@ export class Jwt implements INodeType {
 					{
 						name: 'ES512',
 						value: 'ES512',
-					},*/
+					},
 					{
 						name: 'HS256',
 						value: 'HS256',
@@ -84,7 +86,7 @@ export class Jwt implements INodeType {
 						name: 'HS512',
 						value: 'HS512',
 					},
-					/*{
+					{
 						name: 'PS256',
 						value: 'PS256',
 					},
@@ -107,7 +109,7 @@ export class Jwt implements INodeType {
 					{
 						name: 'RS512',
 						value: 'RS512',
-					},*/
+					},
 				],
 				default: 'HS256',
 				description: 'The algorithm to use for signing the token',
@@ -270,8 +272,20 @@ export class Jwt implements INodeType {
 		const items = this.getInputData();
 		const returnData: INodeExecutionData[] = [];
 		const operation = this.getNodeParameter('operation', 0);
-		const credentials = (await this.getCredentials('jwtSecret')) as { secret: string };
+		const credentials = await this.getCredentials('jwtSecret');
+		let key = "";
 
+		if (credentials.keyType === 'publicKey') {
+			key = formatPrivateKey(credentials.publicKey as string);
+		}
+
+		if (credentials.keyType === 'privateKey') {
+			key = formatPrivateKey(credentials.privateKey as string);
+		}
+
+		if (credentials.keyType === 'passphrase') {
+			key = credentials.passphrase as string;
+		}
 
 		for (let itemIndex = 0; itemIndex < items.length; itemIndex++) {
 			try {
@@ -284,6 +298,17 @@ export class Jwt implements INodeType {
 					} else {
 						claimsToSign = this.getNodeParameter('claims', itemIndex) as IDataObject;
 					}
+					let token = "";
+					if (credentials.keyType === 'passphrase') {
+						token = jwt.sign(claimsToSign, key, { algorithm });
+					} else {
+						if (credentials.passphrase) {
+							token = jwt.sign(claimsToSign, {key: key, passphrase: credentials.passphrase}, { algorithm });
+						} else {
+							token = jwt.sign(claimsToSign, key, { algorithm });
+						}
+					}
+
 					returnData.push({
 						json: {
 							token: jwt.sign(claimsToSign, credentials.secret, { algorithm }),
@@ -299,7 +324,7 @@ export class Jwt implements INodeType {
 					const ignoreExpiration = this.getNodeParameter('ignoreExpiration', itemIndex) as boolean;
 					const ignoreNotBefore = this.getNodeParameter('ignoreNotBefore', itemIndex) as boolean;
 					const clockTolerance = this.getNodeParameter('clockTolerance', itemIndex) as number;
-					const decoded = jwt.verify(token, credentials.secret, {
+					const decoded = jwt.verify(token, key, {
 						algorithms: [algorithm],
 						ignoreExpiration,
 						ignoreNotBefore,
