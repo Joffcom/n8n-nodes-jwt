@@ -29,7 +29,7 @@ Currently this node ony supports secrets, Private keys will be added soon
 * [n8n community nodes documentation](https://docs.n8n.io/integrations/community-nodes/)
 
 ## Version history
-
+0.2.0 - Added support for keys
 0.1.0 - Initial Release
 
 
